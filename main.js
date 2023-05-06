@@ -37,15 +37,18 @@ document.getElementById('fileInput').addEventListener('change', (event) => {
                             console.log("Parsed XML", file.name, xmlDoc);
                             $xml = $(xmlDoc);
         
-                            function checkCnpj() {
-                                const cnpj = $xml.find("dest").find("cnpj").text();
-                                return cnpj.length > 0 ? 'cnpj' : 'cpf';
+                            function getDestCnpjOrCpf($dest) {
+                                const cnpj = $dest.find("CNPJ").text();
+                                const cpf = $dest.find("CPF").text();
+                                return cnpj.length > 0 ? cnpj : cpf;
                             }
+                            
                             console.log($xml.find('prod').text())
         
                             $xml.find("prod").each((index, product) => {
                                 const $product = $(product);
-        
+                                const $dest = $xml.find("dest");
+
                                 const row = {
                                     xprod: $product.find("xProd").text(),
                                     ncm: $product.find("NCM").text(),
@@ -53,10 +56,11 @@ document.getElementById('fileInput').addEventListener('change', (event) => {
                                     qcom: parseFloat($product.find("qCom").text()),
                                     vuncom: parseFloat($product.find("vUnCom").text()),
                                     vprod: parseFloat($product.find("vProd").text()),
-                                    destCnpjCpf: $xml.find("dest").find(checkCnpj()).text(),
-                                    xnome: $xml.find("dest").find("xNome").text(),
+                                    destCnpjCpf: getDestCnpjOrCpf($dest),
+                                    xnome: $dest.find("xNome").text(),
                                     dhemi: $xml.find("dhEmi").text()
                                 };
+
         
                                 console.log("Processed row", row);
                                 dataList.push(row);
@@ -193,14 +197,17 @@ function removeNamespace(xmlString) {
 function populateFilters() {
     const uniqueProducts = new Set();
     const uniqueCompanies = new Set();
+    const uniqueCnpjCpf = new Set();
 
     dataList.forEach(item => {
         uniqueProducts.add(item.xprod);
         uniqueCompanies.add(item.xnome);
+        uniqueCnpjCpf.add(item.destCnpjCpf);
     });
 
     const productFilterElement = document.getElementById('productFilter');
     const companyFilterElement = document.getElementById('companyFilter');
+    const cnpjCpfFilterElement = document.getElementById('cnpjCpfFilter');
 
     uniqueProducts.forEach(product => {
         const option = document.createElement('option');
@@ -215,7 +222,15 @@ function populateFilters() {
         option.textContent = company;
         companyFilterElement.appendChild(option);
     });
+
+    uniqueCnpjCpf.forEach(cnpjCpf => {
+        const option = document.createElement('option');
+        option.value = cnpjCpf;
+        option.textContent = cnpjCpf;
+        cnpjCpfFilterElement.appendChild(option);
+    });
 }
+
 
 document.getElementById('applyDateFilter').addEventListener('click', updateDataAndChart);
 
@@ -224,12 +239,14 @@ function updateDataAndChart() {
     const endDate = document.getElementById('endDate').value;
     const selectedProduct = document.getElementById('productFilter').value;
     const selectedCompany = document.getElementById('companyFilter').value;
+    const selectedCnpjCpf = document.getElementById('cnpjCpfFilter').value;
 
     const filteredDataList = dataList.filter((item) => {
         const dhemiDate = new Date(item.dhemi);
         const isProductMatch = selectedProduct === "all" || item.xprod === selectedProduct;
         const isCompanyMatch = selectedCompany === "all" || item.xnome === selectedCompany;
-        return (!startDate || new Date(startDate) <= dhemiDate) && (!endDate || dhemiDate <= new Date(endDate)) && isProductMatch && isCompanyMatch;
+        const isCnpjCpfMatch = selectedCnpjCpf === "all" || item.destCnpjCpf === selectedCnpjCpf;
+        return (!startDate || new Date(startDate) <= dhemiDate) && (!endDate || dhemiDate <= new Date(endDate)) && isProductMatch && isCompanyMatch && isCnpjCpfMatch;
     });
 
     const totalSales = calculateTotalSales(filteredDataList);
