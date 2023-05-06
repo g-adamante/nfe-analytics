@@ -1,6 +1,6 @@
 # NFe Analytics
 
-NFe Analytics is a simple, client-side web application designed to parse Brazilian invoice files and provide easy-to-understand analytics. The application is built to help small business owners, like my dad, who find traditional ERPs too complicated to use.
+NFe Analytics is a simple, client-side web application designed to parse Brazilian invoice XML files (NFe) and provide easy-to-understand analytics. The application is built to help small business owners, like my dad, who find traditional ERPs too complicated to use.
 
 ## Features
 
